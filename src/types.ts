@@ -78,6 +78,8 @@ export interface SimulationState {
   ia: number;
   ib: number;
   ic: number;
+  /** Electrical frequency of phase currents (Hz) */
+  fe: number;
 }
 
 // ── ODE Solver ──

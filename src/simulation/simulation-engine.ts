@@ -96,6 +96,9 @@ export function createSimulationEngine(
 
     const Te = computeTorque(mp, state[0], state[1]);
 
+    // Electrical frequency of phase currents: fe = p * omega_m / (2 * pi)
+    const fe = Math.abs(mp.p * state[2]) / (2 * Math.PI);
+
     return {
       t,
       id: state[0],
@@ -109,6 +112,7 @@ export function createSimulationEngine(
       ia,
       ib,
       ic,
+      fe,
     };
   }
 

@@ -144,6 +144,9 @@ export function initControlBar(callbacks: ControlBarCallbacks): {
   loadValueInput.style.width = '60px';
   loadValueInput.title = 'Load torque (N\u00B7m)';
 
+  const loadValueUnit = document.createElement('label');
+  loadValueUnit.textContent = 'N\u00B7m';
+
   const loadTimeLabel = document.createElement('label');
   loadTimeLabel.textContent = 'at:';
   const loadTimeInput = document.createElement('input');
@@ -166,6 +169,7 @@ export function initControlBar(callbacks: ControlBarCallbacks): {
   loadGroup.appendChild(loadLabel);
   loadGroup.appendChild(loadTypeSelect);
   loadGroup.appendChild(loadValueInput);
+  loadGroup.appendChild(loadValueUnit);
   loadGroup.appendChild(loadTimeLabel);
   loadGroup.appendChild(loadTimeInput);
   loadGroup.appendChild(loadTimeUnit);

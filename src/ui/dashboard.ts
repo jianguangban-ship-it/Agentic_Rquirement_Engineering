@@ -45,7 +45,8 @@ function updateStatusBar(state: SimulationState): void {
     `<span>\u03C9m = ${state.omega_m.toFixed(2)} rad/s</span>` +
     `<span>Te = ${state.Te.toFixed(3)} N\u00B7m</span>` +
     `<span>id = ${state.id.toFixed(3)} A</span>` +
-    `<span>iq = ${state.iq.toFixed(3)} A</span>`;
+    `<span>iq = ${state.iq.toFixed(3)} A</span>` +
+    `<span>fe = ${state.fe.toFixed(2)} Hz</span>`;
 }
 
 export function initDashboard(): void {
