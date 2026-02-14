@@ -99,6 +99,9 @@ export function createSimulationEngine(
     // Electrical frequency of phase currents: fe = p * omega_m / (2 * pi)
     const fe = Math.abs(mp.p * state[2]) / (2 * Math.PI);
 
+    // Phase current RMS: I_rms = sqrt(id^2 + iq^2) / sqrt(2)
+    const I_rms = Math.sqrt(state[0] * state[0] + state[1] * state[1]) / Math.SQRT2;
+
     return {
       t,
       id: state[0],
@@ -113,6 +116,7 @@ export function createSimulationEngine(
       ib,
       ic,
       fe,
+      I_rms,
     };
   }
 

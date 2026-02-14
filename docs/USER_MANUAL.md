@@ -131,6 +131,7 @@ Real-time display of key simulation variables:
 | id | d-axis current | A |
 | iq | q-axis current | A |
 | fe | Phase current electrical frequency | Hz |
+| Irms | Phase current RMS value | Arms |
 
 ---
 
@@ -237,6 +238,17 @@ The frequency of the three-phase stator currents (ia, ib, ic) equals the electri
 ```
 fe = omega_e / (2 * pi) = (p * omega_m) / (2 * pi)    [Hz]
 ```
+
+#### Phase Current RMS
+
+The RMS (Root Mean Square) value of the phase currents is derived from the d-q current magnitudes. Since the simulator uses an amplitude-invariant Clarke/Park transform, the d-q current vector magnitude equals the peak phase current:
+
+```
+I_peak = sqrt(id^2 + iq^2)
+I_rms  = I_peak / sqrt(2) = sqrt(id^2 + iq^2) / sqrt(2)    [Arms]
+```
+
+This gives the true RMS for sinusoidal phase currents produced under FOC steady-state operation.
 
 #### State Vector
 
@@ -562,6 +574,7 @@ The simulator includes four built-in motor presets:
 | Te | Electromagnetic torque | N*m |
 | TL | Load torque | N*m |
 | fe | Electrical frequency of phase currents | Hz |
+| I_rms | Phase current RMS value | Arms |
 | Kp | Proportional gain | - |
 | Ki | Integral gain | - |
 | Ts | PWM switching period | s |
