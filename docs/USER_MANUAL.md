@@ -132,6 +132,7 @@ Real-time display of key simulation variables:
 | iq | q-axis current | A |
 | fe | Phase current electrical frequency | Hz |
 | Irms | Phase current RMS value | Arms |
+| Pmech | Mechanical output power | W |
 
 ---
 
@@ -249,6 +250,16 @@ I_rms  = I_peak / sqrt(2) = sqrt(id^2 + iq^2) / sqrt(2)    [Arms]
 ```
 
 This gives the true RMS for sinusoidal phase currents produced under FOC steady-state operation.
+
+#### Mechanical Power
+
+The mechanical output power of the motor is the product of electromagnetic torque and mechanical angular velocity:
+
+```
+P_mech = Te * omega_m    [W]
+```
+
+This represents the instantaneous mechanical power delivered to the load (before friction losses).
 
 #### State Vector
 
@@ -575,6 +586,7 @@ The simulator includes four built-in motor presets:
 | TL | Load torque | N*m |
 | fe | Electrical frequency of phase currents | Hz |
 | I_rms | Phase current RMS value | Arms |
+| P_mech | Mechanical output power | W |
 | Kp | Proportional gain | - |
 | Ki | Integral gain | - |
 | Ts | PWM switching period | s |

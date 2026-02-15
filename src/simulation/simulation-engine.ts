@@ -102,6 +102,9 @@ export function createSimulationEngine(
     // Phase current RMS: I_rms = sqrt(id^2 + iq^2) / sqrt(2)
     const I_rms = Math.sqrt(state[0] * state[0] + state[1] * state[1]) / Math.SQRT2;
 
+    // Mechanical power: P_mech = Te * omega_m
+    const P_mech = Te * state[2];
+
     return {
       t,
       id: state[0],
@@ -117,6 +120,7 @@ export function createSimulationEngine(
       ic,
       fe,
       I_rms,
+      P_mech,
     };
   }
 

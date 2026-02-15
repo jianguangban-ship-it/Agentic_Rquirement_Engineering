@@ -40,7 +40,13 @@ function getChartSize(container: HTMLElement): { width: number; height: number }
   return { width: Math.max(rect.width, 100), height: Math.max(rect.height, 80) };
 }
 
-function baseOpts(_title: string, container: HTMLElement, seriesConfig: uPlot.Series[]): uPlot.Options {
+function baseOpts(
+  container: HTMLElement,
+  seriesConfig: uPlot.Series[],
+  xLabel: string,
+  yLabel: string,
+  xSeriesLabel: string = 'Time (s)',
+): uPlot.Options {
   const size = getChartSize(container);
   return {
     width: size.width,
@@ -51,20 +57,24 @@ function baseOpts(_title: string, container: HTMLElement, seriesConfig: uPlot.Se
     },
     axes: [
       {
+        label: xLabel,
         stroke: '#a0a0b0',
         grid: { stroke: 'rgba(255,255,255,0.06)' },
         ticks: { stroke: 'rgba(255,255,255,0.1)' },
         font: '10px monospace',
+        labelFont: '11px monospace',
       },
       {
+        label: yLabel,
         stroke: '#a0a0b0',
         grid: { stroke: 'rgba(255,255,255,0.06)' },
         ticks: { stroke: 'rgba(255,255,255,0.1)' },
         font: '10px monospace',
+        labelFont: '11px monospace',
       },
     ],
     series: [
-      { label: 'Time (s)' },
+      { label: xSeriesLabel },
       ...seriesConfig,
     ],
   };
@@ -72,7 +82,10 @@ function baseOpts(_title: string, container: HTMLElement, seriesConfig: uPlot.Se
 
 function createChart(
   containerId: string,
-  seriesConfig: uPlot.Series[]
+  seriesConfig: uPlot.Series[],
+  xLabel: string,
+  yLabel: string,
+  xSeriesLabel: string = 'Time (s)',
 ): ChartInstance | null {
   const panel = document.getElementById(containerId);
   if (!panel) return null;
@@ -80,7 +93,7 @@ function createChart(
   if (!container) return null;
 
   const data = createRingBuffer(seriesConfig.length + 1); // +1 for time axis
-  const opts = baseOpts('', container, seriesConfig);
+  const opts = baseOpts(container, seriesConfig, xLabel, yLabel, xSeriesLabel);
   const plot = new uPlot(opts, data, container);
 
   // Handle resize
@@ -101,30 +114,30 @@ export function initCharts(): {
     { label: 'ia', stroke: COLORS.red, width: 1.5 },
     { label: 'ib', stroke: COLORS.green, width: 1.5 },
     { label: 'ic', stroke: COLORS.blue, width: 1.5 },
-  ]);
+  ], 'Time (s)', 'Current (A)');
 
   const dqCurrents = createChart('chart-dq-currents', [
     { label: 'id', stroke: COLORS.red, width: 1.5 },
     { label: 'iq', stroke: COLORS.blue, width: 1.5 },
-  ]);
+  ], 'Time (s)', 'Current (A)');
 
   const torque = createChart('chart-torque', [
     { label: 'Te', stroke: COLORS.orange, width: 1.5 },
     { label: 'TL', stroke: COLORS.purple, width: 1.5 },
-  ]);
+  ], 'Time (s)', 'Torque (N\u00B7m)');
 
   const speed = createChart('chart-speed', [
-    { label: '\u03C9m (rad/s)', stroke: COLORS.green, width: 1.5 },
-  ]);
+    { label: '\u03C9m', stroke: COLORS.green, width: 1.5 },
+  ], 'Time (s)', 'Speed (rad/s)');
 
   const voltages = createChart('chart-voltages', [
     { label: 'Vd', stroke: COLORS.red, width: 1.5 },
     { label: 'Vq', stroke: COLORS.blue, width: 1.5 },
-  ]);
+  ], 'Time (s)', 'Voltage (V)');
 
   const dqTrajectory = createChart('chart-dq-trajectory', [
     { label: 'iq vs id', stroke: COLORS.yellow, width: 1.5 },
-  ]);
+  ], 'id (A)', 'iq (A)', 'id (A)');
 
   function pushBatch(batch: SimulationState[]): void {
     for (const s of batch) {

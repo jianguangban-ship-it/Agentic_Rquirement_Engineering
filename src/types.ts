@@ -82,6 +82,8 @@ export interface SimulationState {
   fe: number;
   /** Phase current RMS (A) */
   I_rms: number;
+  /** Mechanical power (W) */
+  P_mech: number;
 }
 
 // ── ODE Solver ──
