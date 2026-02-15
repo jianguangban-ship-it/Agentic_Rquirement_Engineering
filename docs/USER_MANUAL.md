@@ -133,6 +133,8 @@ Real-time display of key simulation variables:
 | fe | Phase current electrical frequency | Hz |
 | Irms | Phase current RMS value | Arms |
 | Pmech | Mechanical output power | W |
+| EMF | Back-EMF peak voltage | V |
+| m | SVPWM modulation index | - |
 
 ---
 
@@ -260,6 +262,30 @@ P_mech = Te * omega_m    [W]
 ```
 
 This represents the instantaneous mechanical power delivered to the load (before friction losses).
+
+#### Back-EMF
+
+The back-EMF (electromotive force) is the voltage induced in the stator windings by the rotating permanent magnet. Its peak value is:
+
+```
+EMF = |omega_e * psi_f| = |p * omega_m * psi_f|    [V]
+```
+
+The back-EMF is proportional to speed and sets a fundamental limit on the maximum speed achievable at a given DC bus voltage.
+
+#### SVPWM Modulation Index
+
+The modulation index indicates how much of the available DC bus voltage is being utilized by the inverter:
+
+```
+m = V_ref / (Vdc / sqrt(3))
+```
+
+Where `V_ref = sqrt(v_alpha^2 + v_beta^2)` is the magnitude of the commanded voltage vector.
+
+- `m < 1.0`: Linear modulation region (sinusoidal output)
+- `m ≈ 1.0`: Full utilization of DC bus voltage
+- `m > 1.0`: Overmodulation (SVPWM automatically clamps)
 
 #### State Vector
 
@@ -587,10 +613,13 @@ The simulator includes four built-in motor presets:
 | fe | Electrical frequency of phase currents | Hz |
 | I_rms | Phase current RMS value | Arms |
 | P_mech | Mechanical output power | W |
+| EMF | Back-EMF peak voltage | V |
+| m | SVPWM modulation index | - |
+| Vdc | DC bus voltage | V |
+| Idc_max | Maximum DC bus current | A |
 | Kp | Proportional gain | - |
 | Ki | Integral gain | - |
 | Ts | PWM switching period | s |
-| Vdc | DC bus voltage | V |
 | SPMSM | Surface Permanent Magnet Synchronous Motor | - |
 | IPMSM | Interior Permanent Magnet Synchronous Motor | - |
 | FOC | Field Oriented Control | - |

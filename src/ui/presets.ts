@@ -19,6 +19,7 @@ export const MOTOR_PRESETS: MotorPreset[] = [
       speed: { Kp: 0.5, Ki: 5 },
       strategy: 'id_zero',
     },
+    inverterParams: { Vdc: 48, Idc_max: 10 },
   },
   {
     name: 'Medium SPMSM (1kW)',
@@ -38,6 +39,7 @@ export const MOTOR_PRESETS: MotorPreset[] = [
       speed: { Kp: 1.0, Ki: 10 },
       strategy: 'id_zero',
     },
+    inverterParams: { Vdc: 200, Idc_max: 15 },
   },
   {
     name: 'Industrial IPMSM (5kW)',
@@ -57,6 +59,7 @@ export const MOTOR_PRESETS: MotorPreset[] = [
       speed: { Kp: 2.0, Ki: 20 },
       strategy: 'mtpa',
     },
+    inverterParams: { Vdc: 400, Idc_max: 25 },
   },
   {
     name: 'EV Traction IPMSM (50kW)',
@@ -76,6 +79,7 @@ export const MOTOR_PRESETS: MotorPreset[] = [
       speed: { Kp: 5.0, Ki: 50 },
       strategy: 'mtpa',
     },
+    inverterParams: { Vdc: 600, Idc_max: 150 },
   },
 ];
 

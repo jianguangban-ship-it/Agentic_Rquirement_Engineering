@@ -1,4 +1,4 @@
-import type { WorkerCommand, WorkerMessage, SimulationState, MotorParams, ControllerParams, LoadProfile } from '../types';
+import type { WorkerCommand, WorkerMessage, SimulationState, MotorParams, ControllerParams, InverterParams, LoadProfile } from '../types';
 import { createSimulationEngine, type SimulationEngine } from './simulation-engine';
 
 let engine: SimulationEngine | null = null;
@@ -53,10 +53,11 @@ function runLoop(): void {
 function startSimulation(
   motorParams: MotorParams,
   controllerParams: ControllerParams,
+  inverterParams: InverterParams,
   loadProfile: LoadProfile,
   speedRef: number
 ): void {
-  engine = createSimulationEngine(motorParams, controllerParams, loadProfile, speedRef, DT);
+  engine = createSimulationEngine(motorParams, controllerParams, inverterParams, loadProfile, speedRef, DT);
   running = true;
   postStatus('running');
   runLoop();
@@ -83,7 +84,7 @@ self.onmessage = (e: MessageEvent<WorkerCommand>) => {
   switch (cmd.type) {
     case 'start':
       stopSimulation();
-      startSimulation(cmd.motorParams, cmd.controllerParams, cmd.loadProfile, cmd.speedRef);
+      startSimulation(cmd.motorParams, cmd.controllerParams, cmd.inverterParams, cmd.loadProfile, cmd.speedRef);
       break;
 
     case 'pause':
@@ -109,6 +110,10 @@ self.onmessage = (e: MessageEvent<WorkerCommand>) => {
 
     case 'updateControllerParams':
       engine?.setControllerParams(cmd.controllerParams);
+      break;
+
+    case 'updateInverterParams':
+      engine?.setInverterParams(cmd.inverterParams);
       break;
 
     case 'updateLoadProfile':

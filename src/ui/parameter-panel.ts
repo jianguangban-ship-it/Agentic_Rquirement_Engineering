@@ -1,4 +1,4 @@
-import type { MotorParams, ControllerParams, ControlStrategy, MotorPreset } from '../types';
+import type { MotorParams, ControllerParams, InverterParams, ControlStrategy, MotorPreset } from '../types';
 
 interface ParamField {
   key: string;
@@ -76,9 +76,15 @@ function setInputValue(key: string, value: number): void {
   if (input) input.value = String(value);
 }
 
+const INVERTER_FIELDS: ParamField[] = [
+  { key: 'Vdc', label: 'Vdc', unit: 'V', defaultValue: 200, step: '1' },
+  { key: 'Idc_max', label: 'Idc', unit: 'A', defaultValue: 50, step: '1' },
+];
+
 export function initParameterPanel(): {
   getMotorParams: () => MotorParams;
   getControllerParams: () => ControllerParams;
+  getInverterParams: () => InverterParams;
 } {
   const panel = document.getElementById('parameter-panel');
   if (!panel) throw new Error('Parameter panel element not found');
@@ -152,6 +158,18 @@ export function initParameterPanel(): {
   stratRow.appendChild(document.createElement('span'));
   panel.appendChild(stratRow);
 
+  // DC Bus Parameters section — positioned below Control Strategy
+  const dcTitle = document.createElement('h2');
+  dcTitle.textContent = 'DC Bus';
+  panel.appendChild(dcTitle);
+
+  const dcGroup = document.createElement('div');
+  dcGroup.className = 'param-group';
+  INVERTER_FIELDS.forEach((field) => {
+    dcGroup.appendChild(createParamRow(field));
+  });
+  panel.appendChild(dcGroup);
+
   // Listen for preset application
   document.addEventListener('preset-applied', ((e: CustomEvent<MotorPreset>) => {
     const preset = e.detail;
@@ -168,6 +186,10 @@ export function initParameterPanel(): {
     setInputValue('speed.Ki', cp.speed.Ki);
     stratSelect.value = cp.strategy;
     typeSelect.value = preset.motorType;
+    if (preset.inverterParams) {
+      setInputValue('Vdc', preset.inverterParams.Vdc);
+      setInputValue('Idc_max', preset.inverterParams.Idc_max);
+    }
   }) as EventListener);
 
   return {
@@ -185,6 +207,10 @@ export function initParameterPanel(): {
       qAxis: { Kp: getInputValue('qAxis.Kp'), Ki: getInputValue('qAxis.Ki') },
       speed: { Kp: getInputValue('speed.Kp'), Ki: getInputValue('speed.Ki') },
       strategy: stratSelect.value as ControlStrategy,
+    }),
+    getInverterParams: (): InverterParams => ({
+      Vdc: getInputValue('Vdc'),
+      Idc_max: getInputValue('Idc_max'),
     }),
   };
 }

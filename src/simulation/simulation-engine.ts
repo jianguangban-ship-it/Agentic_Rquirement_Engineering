@@ -1,18 +1,23 @@
-import type { MotorParams, ControllerParams, LoadProfile, SimulationState, StateVector } from '../types';
+import type { MotorParams, ControllerParams, InverterParams, LoadProfile, SimulationState, StateVector } from '../types';
 import { rk4Step } from './ode-solver';
 import { createMotorDerivatives, computeTorque, computeLoadTorque } from './motor-model';
 import {
   focStep,
   createFOCState,
   resetFOCState,
+  inverseParkTransform,
+  clarkeTransform,
+  parkTransform,
   type FOCState,
 } from './foc-controller';
+import { computeSVPWM, dutyToVoltages } from './svpwm';
 
 export interface SimulationEngine {
   step(): SimulationState;
   reset(): void;
   setMotorParams(params: MotorParams): void;
   setControllerParams(params: ControllerParams): void;
+  setInverterParams(params: InverterParams): void;
   setLoadProfile(profile: LoadProfile): void;
   setSpeedRef(ref: number): void;
   getTime(): number;
@@ -23,12 +28,14 @@ const DEFAULT_DT = 1e-5; // 10 μs timestep — suitable for motor simulation
 export function createSimulationEngine(
   motorParams: MotorParams,
   controllerParams: ControllerParams,
+  inverterParams: InverterParams,
   loadProfile: LoadProfile,
   speedRef: number,
   dt: number = DEFAULT_DT
 ): SimulationEngine {
   let mp = { ...motorParams };
   let cp = { ...controllerParams };
+  let ip = { ...inverterParams };
   let lp = { ...loadProfile };
   let wRef = speedRef;
 
@@ -36,12 +43,18 @@ export function createSimulationEngine(
   let state: StateVector = [0, 0, 0, 0];
   let t = 0;
 
-  // FOC controller state
-  let focState: FOCState = createFOCState();
+  // Derive FOC voltage limit from Vdc: max phase voltage in linear region
+  const vMaxFromVdc = () => ip.Vdc / Math.sqrt(3);
 
-  // Voltages from last controller step
+  // FOC controller state — limits derived from inverter params
+  let focState: FOCState = createFOCState(vMaxFromVdc(), ip.Idc_max);
+
+  // Voltages from last controller step (after SVPWM clamping)
   let Vd = 0;
   let Vq = 0;
+
+  // Modulation index from last controller step
+  let currentModIndex = 0;
 
   // Controller runs at a slower rate than the plant
   const controlDivider = 10; // Control at every 10th plant step
@@ -69,8 +82,23 @@ export function createSimulationEngine(
         state[2], // omega_m
         dt * controlDivider
       );
-      Vd = result.Vd;
-      Vq = result.Vq;
+
+      // Convert FOC dq output through SVPWM inverter model
+      const { v_alpha, v_beta } = inverseParkTransform(result.Vd, result.Vq, state[3]);
+
+      // Compute modulation index: m = V_ref / (Vdc / sqrt(3))
+      const V_ref = Math.sqrt(v_alpha * v_alpha + v_beta * v_beta);
+      currentModIndex = ip.Vdc > 0 ? V_ref / (ip.Vdc / Math.sqrt(3)) : 0;
+
+      // SVPWM: compute duty cycles and reconstruct actual phase voltages
+      const svpwm = computeSVPWM(v_alpha, v_beta, ip.Vdc);
+      const { va, vb, vc } = dutyToVoltages(svpwm.da, svpwm.db, svpwm.dc, ip.Vdc);
+
+      // Convert actual phase voltages back to dq frame for motor model
+      const { i_alpha: v_alpha_actual, i_beta: v_beta_actual } = clarkeTransform(va, vb, vc);
+      const { id: vd_actual, iq: vq_actual } = parkTransform(v_alpha_actual, v_beta_actual, state[3]);
+      Vd = vd_actual;
+      Vq = vq_actual;
     }
     stepCount++;
 
@@ -105,6 +133,9 @@ export function createSimulationEngine(
     // Mechanical power: P_mech = Te * omega_m
     const P_mech = Te * state[2];
 
+    // Back-EMF: EMF = |p * omega_m * psi_f| (peak voltage)
+    const EMF = Math.abs(mp.p * state[2] * mp.psi_f);
+
     return {
       t,
       id: state[0],
@@ -121,6 +152,8 @@ export function createSimulationEngine(
       fe,
       I_rms,
       P_mech,
+      EMF,
+      modulation_index: currentModIndex,
     };
   }
 
@@ -129,7 +162,9 @@ export function createSimulationEngine(
     t = 0;
     Vd = 0;
     Vq = 0;
+    currentModIndex = 0;
     stepCount = 0;
+    focState = createFOCState(vMaxFromVdc(), ip.Idc_max);
     resetFOCState(focState);
   }
 
@@ -138,6 +173,16 @@ export function createSimulationEngine(
     reset,
     setMotorParams(params: MotorParams) { mp = { ...params }; },
     setControllerParams(params: ControllerParams) { cp = { ...params }; },
+    setInverterParams(params: InverterParams) {
+      ip = { ...params };
+      const vMax = vMaxFromVdc();
+      focState.piId.outputMin = -vMax;
+      focState.piId.outputMax = vMax;
+      focState.piIq.outputMin = -vMax;
+      focState.piIq.outputMax = vMax;
+      focState.piSpeed.outputMin = -ip.Idc_max;
+      focState.piSpeed.outputMax = ip.Idc_max;
+    },
     setLoadProfile(profile: LoadProfile) { lp = { ...profile }; },
     setSpeedRef(ref: number) { wRef = ref; },
     getTime() { return t; },

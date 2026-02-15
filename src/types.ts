@@ -39,6 +39,15 @@ export type ControlStrategy = 'id_zero' | 'mtpa';
 
 export type MotorType = 'SPMSM' | 'IPMSM';
 
+// ── Inverter Parameters ──
+
+export interface InverterParams {
+  /** DC bus voltage (V) */
+  Vdc: number;
+  /** Maximum DC bus current (A) */
+  Idc_max: number;
+}
+
 // ── Load Torque ──
 
 export type LoadProfileType = 'step' | 'ramp' | 'constant';
@@ -84,6 +93,10 @@ export interface SimulationState {
   I_rms: number;
   /** Mechanical power (W) */
   P_mech: number;
+  /** Back-EMF peak voltage (V) */
+  EMF: number;
+  /** SVPWM modulation index */
+  modulation_index: number;
 }
 
 // ── ODE Solver ──
@@ -105,12 +118,13 @@ export interface PIState {
 // ── Web Worker Messages ──
 
 export type WorkerCommand =
-  | { type: 'start'; motorParams: MotorParams; controllerParams: ControllerParams; loadProfile: LoadProfile; speedRef: number }
+  | { type: 'start'; motorParams: MotorParams; controllerParams: ControllerParams; inverterParams: InverterParams; loadProfile: LoadProfile; speedRef: number }
   | { type: 'pause' }
   | { type: 'resume' }
   | { type: 'stop' }
   | { type: 'updateMotorParams'; motorParams: MotorParams }
   | { type: 'updateControllerParams'; controllerParams: ControllerParams }
+  | { type: 'updateInverterParams'; inverterParams: InverterParams }
   | { type: 'updateLoadProfile'; loadProfile: LoadProfile }
   | { type: 'updateSpeedRef'; speedRef: number }
   | { type: 'setSimSpeed'; speed: number };
@@ -134,4 +148,5 @@ export interface MotorPreset {
   motorType: MotorType;
   params: MotorParams;
   controllerParams: ControllerParams;
+  inverterParams: InverterParams;
 }

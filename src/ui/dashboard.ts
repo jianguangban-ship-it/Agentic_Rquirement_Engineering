@@ -48,17 +48,20 @@ function updateStatusBar(state: SimulationState): void {
     `<span>iq = ${state.iq.toFixed(3)} A</span>` +
     `<span>fe = ${state.fe.toFixed(2)} Hz</span>` +
     `<span>Irms = ${state.I_rms.toFixed(3)} Arms</span>` +
-    `<span>Pmech = ${state.P_mech.toFixed(2)} W</span>`;
+    `<span>Pmech = ${state.P_mech.toFixed(2)} W</span>` +
+    `<span>EMF = ${state.EMF.toFixed(2)} V</span>` +
+    `<span>m = ${state.modulation_index.toFixed(3)}</span>`;
 }
 
 export function initDashboard(): void {
-  const { getMotorParams, getControllerParams } = initParameterPanel();
+  const { getMotorParams, getControllerParams, getInverterParams } = initParameterPanel();
   const { getLoadProfile, getSpeedRef } = initControlBar({
     onStart: () => {
       sendCommand({
         type: 'start',
         motorParams: getMotorParams(),
         controllerParams: getControllerParams(),
+        inverterParams: getInverterParams(),
         loadProfile: getLoadProfile(),
         speedRef: getSpeedRef(),
       });
@@ -84,5 +87,6 @@ export function initDashboard(): void {
   initPresets((preset) => {
     sendCommand({ type: 'updateMotorParams', motorParams: preset.params });
     sendCommand({ type: 'updateControllerParams', controllerParams: preset.controllerParams });
+    sendCommand({ type: 'updateInverterParams', inverterParams: preset.inverterParams });
   });
 }
