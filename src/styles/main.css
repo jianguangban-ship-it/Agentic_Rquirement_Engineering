@@ -62,12 +62,6 @@ html, body {
   letter-spacing: 0.5px;
 }
 
-.header-controls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
 /* ── Dashboard ── */
 .dashboard {
   display: grid;
@@ -119,7 +113,8 @@ html, body {
   flex-shrink: 0;
 }
 
-.param-row input {
+.param-row input,
+.param-row select {
   flex: 1;
   min-width: 0;
   padding: 4px 8px;
@@ -141,6 +136,13 @@ html, body {
   color: var(--color-text-muted);
   width: 32px;
   flex-shrink: 0;
+}
+
+.type-hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding: 4px 0 4px 48px;
 }
 
 /* ── Chart Grid ── */

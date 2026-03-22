@@ -1,4 +1,5 @@
-import type { MotorParams, ControllerParams, InverterParams, ControlStrategy, MotorPreset } from '../types';
+import type { MotorParams, ControllerParams, InverterParams, ControlStrategy, MotorPreset, MotorType } from '../types';
+import { MOTOR_PRESETS } from './presets';
 
 interface ParamField {
   key: string;
@@ -81,7 +82,7 @@ const INVERTER_FIELDS: ParamField[] = [
   { key: 'Idc_max', label: 'Idc', unit: 'A', defaultValue: 50, step: '1' },
 ];
 
-export function initParameterPanel(): {
+export function initParameterPanel(onPresetSelect: (preset: MotorPreset) => void): {
   getMotorParams: () => MotorParams;
   getControllerParams: () => ControllerParams;
   getInverterParams: () => InverterParams;
@@ -89,28 +90,35 @@ export function initParameterPanel(): {
   const panel = document.getElementById('parameter-panel');
   if (!panel) throw new Error('Parameter panel element not found');
 
-  // Motor parameters section
+  // Current motor type — drives strategy constraints and Ld/Lq sync
+  let currentMotorType: MotorType = 'SPMSM';
+
+  // ── Motor Parameters section ──
   const motorTitle = document.createElement('h2');
   motorTitle.textContent = 'Motor Parameters';
   panel.appendChild(motorTitle);
 
-  // Motor type selector
-  const typeRow = document.createElement('div');
-  typeRow.className = 'param-row';
-  const typeLabel = document.createElement('label');
-  typeLabel.textContent = 'Type';
-  const typeSelect = document.createElement('select');
-  typeSelect.id = 'param-motorType';
-  ['SPMSM', 'IPMSM'].forEach((t) => {
+  // Preset selector (replaces old Type dropdown)
+  const presetRow = document.createElement('div');
+  presetRow.className = 'param-row';
+  const presetLabel = document.createElement('label');
+  presetLabel.textContent = 'Type';
+  const presetSelect = document.createElement('select');
+  presetSelect.id = 'param-preset';
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  defaultOpt.textContent = 'Import Motor Parameters';
+  presetSelect.appendChild(defaultOpt);
+  MOTOR_PRESETS.forEach((preset, index) => {
     const opt = document.createElement('option');
-    opt.value = t;
-    opt.textContent = t;
-    typeSelect.appendChild(opt);
+    opt.value = String(index);
+    opt.textContent = preset.name;
+    presetSelect.appendChild(opt);
   });
-  typeRow.appendChild(typeLabel);
-  typeRow.appendChild(typeSelect);
-  typeRow.appendChild(document.createElement('span')); // empty unit
-  panel.appendChild(typeRow);
+  presetRow.appendChild(presetLabel);
+  presetRow.appendChild(presetSelect);
+  presetRow.appendChild(document.createElement('span')); // empty unit
+  panel.appendChild(presetRow);
 
   const motorGroup = document.createElement('div');
   motorGroup.className = 'param-group';
@@ -119,7 +127,22 @@ export function initParameterPanel(): {
   });
   panel.appendChild(motorGroup);
 
-  // Controller parameters section
+  // ── Ld/Lq sync for SPMSM ──
+  const ldInput = document.getElementById('param-Ld') as HTMLInputElement;
+  const lqInput = document.getElementById('param-Lq') as HTMLInputElement;
+
+  ldInput.addEventListener('input', () => {
+    if (currentMotorType === 'SPMSM') {
+      lqInput.value = ldInput.value;
+    }
+  });
+  lqInput.addEventListener('input', () => {
+    if (currentMotorType === 'SPMSM') {
+      ldInput.value = lqInput.value;
+    }
+  });
+
+  // ── Controller Gains section ──
   const ctrlTitle = document.createElement('h2');
   ctrlTitle.textContent = 'Controller Gains';
   panel.appendChild(ctrlTitle);
@@ -133,7 +156,7 @@ export function initParameterPanel(): {
     panel.appendChild(group);
   });
 
-  // Strategy selector
+  // ── Control Strategy section ──
   const stratTitle = document.createElement('h2');
   stratTitle.textContent = 'Control Strategy';
   panel.appendChild(stratTitle);
@@ -144,21 +167,26 @@ export function initParameterPanel(): {
   stratLabel.textContent = 'Mode';
   const stratSelect = document.createElement('select');
   stratSelect.id = 'param-strategy';
-  [
-    { value: 'id_zero', text: 'id = 0' },
-    { value: 'mtpa', text: 'MTPA' },
-  ].forEach(({ value, text }) => {
-    const opt = document.createElement('option');
-    opt.value = value;
-    opt.textContent = text;
-    stratSelect.appendChild(opt);
-  });
+  const idZeroOpt = document.createElement('option');
+  idZeroOpt.value = 'id_zero';
+  idZeroOpt.textContent = 'id = 0';
+  const mtpaOpt = document.createElement('option');
+  mtpaOpt.value = 'mtpa';
+  mtpaOpt.textContent = 'MTPA';
+  stratSelect.appendChild(idZeroOpt);
+  stratSelect.appendChild(mtpaOpt);
   stratRow.appendChild(stratLabel);
   stratRow.appendChild(stratSelect);
   stratRow.appendChild(document.createElement('span'));
   panel.appendChild(stratRow);
 
-  // DC Bus Parameters section — positioned below Control Strategy
+  // Motor type hint label (shown below strategy selector)
+  const typeHint = document.createElement('div');
+  typeHint.className = 'type-hint';
+  typeHint.textContent = 'Import a preset to set motor type constraints';
+  panel.appendChild(typeHint);
+
+  // ── DC Bus section ──
   const dcTitle = document.createElement('h2');
   dcTitle.textContent = 'DC Bus';
   panel.appendChild(dcTitle);
@@ -170,13 +198,39 @@ export function initParameterPanel(): {
   });
   panel.appendChild(dcGroup);
 
-  // Listen for preset application
-  document.addEventListener('preset-applied', ((e: CustomEvent<MotorPreset>) => {
-    const preset = e.detail;
+  // ── Motor type constraint logic ──
+  function applyMotorTypeConstraints(motorType: MotorType): void {
+    currentMotorType = motorType;
+    if (motorType === 'SPMSM') {
+      // SPMSM: Ld must equal Lq, only id=0 strategy
+      mtpaOpt.disabled = true;
+      stratSelect.value = 'id_zero';
+      typeHint.textContent = 'SPMSM: id = 0 only (Ld = Lq)';
+      // Sync Lq to Ld
+      lqInput.value = ldInput.value;
+    } else {
+      // IPMSM: both strategies available, Ld ≠ Lq allowed
+      mtpaOpt.disabled = false;
+      typeHint.textContent = 'IPMSM: MTPA available (Ld ≠ Lq)';
+    }
+  }
+
+  // No constraints applied initially — both strategies available until a preset is selected
+
+  // ── Preset selection handler ──
+  presetSelect.addEventListener('change', () => {
+    const idx = parseInt(presetSelect.value, 10);
+    if (isNaN(idx) || !MOTOR_PRESETS[idx]) return;
+
+    const preset = MOTOR_PRESETS[idx];
+
+    // Update motor parameter inputs
     const mp = preset.params;
     MOTOR_FIELDS.forEach((field) => {
       setInputValue(field.key, (mp as unknown as Record<string, number>)[field.key]);
     });
+
+    // Update controller gain inputs
     const cp = preset.controllerParams;
     setInputValue('dAxis.Kp', cp.dAxis.Kp);
     setInputValue('dAxis.Ki', cp.dAxis.Ki);
@@ -184,13 +238,24 @@ export function initParameterPanel(): {
     setInputValue('qAxis.Ki', cp.qAxis.Ki);
     setInputValue('speed.Kp', cp.speed.Kp);
     setInputValue('speed.Ki', cp.speed.Ki);
-    stratSelect.value = cp.strategy;
-    typeSelect.value = preset.motorType;
+
+    // Update inverter inputs
     if (preset.inverterParams) {
       setInputValue('Vdc', preset.inverterParams.Vdc);
       setInputValue('Idc_max', preset.inverterParams.Idc_max);
     }
-  }) as EventListener);
+
+    // Apply motor type constraints (this also sets strategy for SPMSM)
+    applyMotorTypeConstraints(preset.motorType);
+
+    // Set strategy from preset (for IPMSM, preset may specify mtpa)
+    if (preset.motorType === 'IPMSM') {
+      stratSelect.value = cp.strategy;
+    }
+
+    // Notify dashboard to send params to simulation worker
+    onPresetSelect(preset);
+  });
 
   return {
     getMotorParams: (): MotorParams => ({

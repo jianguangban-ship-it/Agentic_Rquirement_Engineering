@@ -82,25 +82,3 @@ export const MOTOR_PRESETS: MotorPreset[] = [
     inverterParams: { Vdc: 600, Idc_max: 150 },
   },
 ];
-
-export function initPresets(onSelect: (preset: MotorPreset) => void): void {
-  const select = document.getElementById('preset-select') as HTMLSelectElement;
-  if (!select) return;
-
-  // Populate options
-  MOTOR_PRESETS.forEach((preset, index) => {
-    const option = document.createElement('option');
-    option.value = String(index);
-    option.textContent = preset.name;
-    select.appendChild(option);
-  });
-
-  select.addEventListener('change', () => {
-    const idx = parseInt(select.value, 10);
-    if (!isNaN(idx) && MOTOR_PRESETS[idx]) {
-      onSelect(MOTOR_PRESETS[idx]);
-      // Update the parameter panel inputs
-      document.dispatchEvent(new CustomEvent('preset-applied', { detail: MOTOR_PRESETS[idx] }));
-    }
-  });
-}

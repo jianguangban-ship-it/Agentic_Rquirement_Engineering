@@ -1,7 +1,6 @@
 import { initParameterPanel } from './parameter-panel';
 import { initControlBar } from './control-bar';
 import { initCharts } from './charts';
-import { initPresets } from './presets';
 import type { SimulationState, WorkerCommand, WorkerMessage, LoadProfile } from '../types';
 
 let worker: Worker | null = null;
@@ -54,7 +53,11 @@ function updateStatusBar(state: SimulationState): void {
 }
 
 export function initDashboard(): void {
-  const { getMotorParams, getControllerParams, getInverterParams } = initParameterPanel();
+  const { getMotorParams, getControllerParams, getInverterParams } = initParameterPanel((preset) => {
+    sendCommand({ type: 'updateMotorParams', motorParams: preset.params });
+    sendCommand({ type: 'updateControllerParams', controllerParams: preset.controllerParams });
+    sendCommand({ type: 'updateInverterParams', inverterParams: preset.inverterParams });
+  });
   const { getLoadProfile, getSpeedRef } = initControlBar({
     onStart: () => {
       sendCommand({
@@ -84,9 +87,4 @@ export function initDashboard(): void {
     }
   };
 
-  initPresets((preset) => {
-    sendCommand({ type: 'updateMotorParams', motorParams: preset.params });
-    sendCommand({ type: 'updateControllerParams', controllerParams: preset.controllerParams });
-    sendCommand({ type: 'updateInverterParams', inverterParams: preset.inverterParams });
-  });
 }

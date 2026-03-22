@@ -72,7 +72,7 @@ The simulator interface is divided into five main areas:
 
 ```
 +---------------------------------------------+
-|  Header (title + motor preset selector)     |
+|  Header: "PMSM Simulator"                  |
 +----------+----------------------------------+
 |          |  Chart Grid (2 x 3)              |
 | Parameter|  [Phase Currents] [d-q Currents] |
@@ -87,7 +87,19 @@ The simulator interface is divided into five main areas:
 
 ### Parameter Panel (Left Sidebar)
 
-Edit the motor parameters and controller gains:
+The sidebar is organized into four sections:
+
+#### Motor Parameters
+
+At the top is a **"Type"** dropdown labeled **"Import Motor Parameters"**. This replaces the old header preset selector and the old motor type dropdown. Selecting a preset from this dropdown will:
+
+- Fill in all motor parameter fields (Rs, Ld, Lq, psi_f, p, J, B)
+- Fill in all controller gain fields
+- Fill in DC bus parameters (Vdc, Idc_max)
+- Set the appropriate control strategy
+- Apply motor type constraints (see below)
+
+Below the dropdown are editable number inputs:
 
 | Parameter | Symbol | Unit |
 |-----------|--------|------|
@@ -99,7 +111,28 @@ Edit the motor parameters and controller gains:
 | Rotor Inertia | J | kg*m^2 |
 | Friction Coefficient | B | N*m*s/rad |
 
-Controller gains for d-axis, q-axis, and speed PI loops (Kp and Ki for each) are also configurable. The control strategy can be set to **id = 0** (for SPMSM) or **MTPA** (for IPMSM).
+#### Controller Gains
+
+PI gains for d-axis current loop (Kp_d, Ki_d), q-axis current loop (Kp_q, Ki_q), and speed loop (Kp_s, Ki_s).
+
+#### Control Strategy
+
+A **Mode** dropdown to select the control strategy:
+
+- **id = 0**: d-axis current held at zero. Suitable for all motor types, required for SPMSM.
+- **MTPA**: Maximum Torque Per Ampere. Optimizes torque efficiency by injecting negative id current. Only available for IPMSM.
+
+Below the dropdown, a **type hint** shows the current motor type constraint:
+
+| Motor Type | Hint Text | MTPA Available | Ld/Lq |
+|------------|-----------|----------------|-------|
+| No preset selected | "Import a preset to set motor type constraints" | Yes | Independent |
+| SPMSM preset | "SPMSM: id = 0 only (Ld = Lq)" | No (disabled) | Synced — editing Ld auto-updates Lq, and vice versa |
+| IPMSM preset | "IPMSM: MTPA available (Ld != Lq)" | Yes | Independent |
+
+#### DC Bus
+
+Inverter parameters: DC bus voltage (Vdc) and maximum DC bus current (Idc_max).
 
 ### Chart Grid (6 Panels)
 
@@ -142,14 +175,15 @@ Real-time display of key simulation variables:
 
 ### Basic Workflow
 
-1. **Select a motor preset** from the top-right dropdown (or manually set parameters in the sidebar)
-2. **Set the speed reference** in the control bar (e.g., 100 rad/s)
-3. **Configure the load torque** - choose the type, value, and apply time
-4. **Click Start** to begin the simulation
-5. **Observe** the 6 real-time charts updating
-6. **Adjust** speed reference or load profile while the simulation is running
-7. **Pause/Resume** to freeze or continue
-8. **Reset** to return to initial conditions
+1. **Import a motor preset** from the "Type" dropdown at the top of the left sidebar (labeled "Import Motor Parameters"), or manually fill in all parameters
+2. **Check the control strategy** — the preset auto-selects the appropriate strategy (id = 0 for SPMSM, MTPA for IPMSM). For IPMSM motors, you can switch between strategies freely.
+3. **Set the speed reference** in the control bar (e.g., 100 rad/s)
+4. **Configure the load torque** — choose the type, value, and apply time
+5. **Click Start** to begin the simulation
+6. **Observe** the 6 real-time charts updating
+7. **Adjust** speed reference, load profile, or controller gains while the simulation is running
+8. **Pause/Resume** to freeze or continue
+9. **Reset** to return to initial conditions
 
 ### Experimenting with Load Disturbance
 
@@ -160,9 +194,12 @@ Real-time display of key simulation variables:
 
 ### Comparing SPMSM vs IPMSM
 
-1. Select "Small SPMSM (100W)" preset and run a test
-2. Reset, then select "Industrial IPMSM (5kW)" preset
-3. Compare the d-q trajectory plots - the IPMSM will show non-zero id due to MTPA strategy
+1. Import "Small SPMSM (100W)" from the Type dropdown in the sidebar and run a test
+2. Note that the control strategy is forced to "id = 0" and Ld/Lq are synced
+3. Reset, then import "Industrial IPMSM (5kW)"
+4. Note that the strategy switches to "MTPA" and Ld/Lq are independent
+5. Compare the d-q trajectory plots — the IPMSM will show non-zero id due to MTPA strategy
+6. Try switching the IPMSM to "id = 0" strategy and observe the difference in efficiency
 
 ---
 
@@ -441,8 +478,8 @@ This formula is derived by minimizing the stator current magnitude `Is = sqrt(id
 
 #### When to Use MTPA
 
-- **SPMSM (Ld = Lq):** MTPA reduces to `id = 0` since there is no reluctance torque. The `id = 0` strategy should be used.
-- **IPMSM (Ld ≠ Lq):** MTPA produces a negative id (demagnetizing current) that generates additional reluctance torque, improving torque-per-ampere efficiency.
+- **SPMSM (Ld = Lq):** MTPA reduces to `id = 0` since there is no reluctance torque. The simulator enforces this — when an SPMSM preset is imported, the MTPA option is disabled and the strategy is locked to `id = 0`.
+- **IPMSM (Ld ≠ Lq):** MTPA produces a negative id (demagnetizing current) that generates additional reluctance torque, improving torque-per-ampere efficiency. When an IPMSM preset is imported, both strategies become available so you can compare their performance.
 
 ---
 
