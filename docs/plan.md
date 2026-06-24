@@ -45,6 +45,7 @@
 │                 MAIN THREAD (UI)                  │
 │                                                   │
 │  index.html + main.ts                             │
+│    ├── router.ts         (hash-based view router)  │
 │    ├── dashboard.ts      (orchestrator)            │
 │    ├── parameter-panel.ts (sidebar inputs+presets) │
 │    ├── control-bar.ts    (buttons, speed, load)   │
@@ -85,11 +86,12 @@ full-pmsm-simulator/
 │   ├── plan.md                         # This document
 │   └── USER_MANUAL.md                  # User guide
 ├── src/
-│   ├── main.ts                         # Entry point
+│   ├── main.ts                         # Entry point (wires router)
 │   ├── types.ts                        # Shared type definitions
 │   ├── styles/
 │   │   └── main.css                    # Full stylesheet
 │   ├── ui/
+│   │   ├── router.ts                   # Hash-based view router
 │   │   ├── dashboard.ts               # UI orchestrator
 │   │   ├── parameter-panel.ts          # Sidebar: parameters + presets
 │   │   ├── control-bar.ts             # Bottom: buttons + inputs
@@ -167,15 +169,44 @@ full-pmsm-simulator/
 | FR-05.8 | Display back-EMF voltage | Done |
 | FR-05.9 | Display SVPWM modulation index m | Done |
 
+### FR-06: Page Navigation
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| FR-06.1 | Header nav tabs to switch between top-level pages | Done |
+| FR-06.2 | Hash-based routing (`#/simulation`, `#/parameter-configuration`) | Done |
+| FR-06.3 | Default to `#/simulation`; unknown hash falls back to default | Done |
+| FR-06.4 | Active tab highlighted; bookmarking + back/forward supported | Done |
+| FR-06.5 | Lazy per-view init on first show (charts get a sized container) | Done |
+| FR-06.6 | Parameter-Configuration page ("Coming soon" placeholder) | Placeholder |
+
 ---
 
 ## 4. UI Design Requirements
 
-### Layout
+### Page Navigation
+
+The app is a single-page application with hash-based routing (`src/ui/router.ts`).
+A persistent header nav switches between top-level views; only the body content
+swaps. The header (title + nav tabs) stays fixed.
+
+| Route | View | Status |
+|-------|------|--------|
+| `#/simulation` (default) | Simulation page (full simulator UI below) | Done |
+| `#/parameter-configuration` | Parameter-Configuration page ("Coming soon" placeholder) | Placeholder |
+
+Routing behavior: unknown/empty hash falls back to `#/simulation`; the active tab
+is highlighted; each view's init runs lazily on first show (the simulation
+dashboard initializes only when its view is first displayed, so uPlot charts get a
+sized container). Bookmarking, reload-on-route, and browser back/forward are
+supported.
+
+### Layout (Simulation page)
 
 ```
 +---------------------------------------------+
-|  Header: "PMSM Simulator" (title only)      |
+|  Header: "PMSM Simulator"  [Simulation]     |
+|                  [Parameter-Configuration]  |
 +----------+----------------------------------+
 |          |  Chart Grid (2 x 3)              |
 | Sidebar  |  [Phase Currents] [d-q Currents] |
@@ -185,6 +216,20 @@ full-pmsm-simulator/
 |  Control Bar (Start/Pause/Reset + inputs)   |
 +---------------------------------------------+
 |  Status Bar (real-time metrics)             |
++---------------------------------------------+
+```
+
+### Layout (Parameter-Configuration page)
+
+```
++---------------------------------------------+
+|  Header: "PMSM Simulator"  [Simulation]     |
+|                  [Parameter-Configuration]  |
++---------------------------------------------+
+|                                             |
+|           Parameter-Configuration           |
+|                Coming soon.                  |
+|                                             |
 +---------------------------------------------+
 ```
 
@@ -469,4 +514,5 @@ Safety: when Ld = Lq (SPMSM), returns id_ref = 0.
 | 0.6 | - | `d2943a6` | Add axis unit labels to all charts and mechanical power (Pmech) to status bar |
 | 0.7 | - | `4fdc4e0` | Add inverter model with SVPWM, DC bus parameters (Vdc, Idc_max), back-EMF display, modulation index |
 | 0.8 | - | `b7ba6bd` | Merge CLAUDE.md branch into main |
-| 0.9 | - | (current) | UI consolidation: move preset selector from header to left panel as "Import Motor Parameters", remove duplicate Type dropdown, add motor type constraints (SPMSM: id=0 only + Ld=Lq sync, IPMSM: MTPA enabled), add type hint in Control Strategy section, clean up unused CSS |
+| 0.9 | - | `4001543` | UI consolidation: move preset selector from header to left panel as "Import Motor Parameters", remove duplicate Type dropdown, add motor type constraints (SPMSM: id=0 only + Ld=Lq sync, IPMSM: MTPA enabled), add type hint in Control Strategy section, clean up unused CSS |
+| 0.10 | - | (current) | Add multi-page navigation: header nav tabs with hash-based router (`src/ui/router.ts`), wrap existing UI in `#/simulation` view, add `#/parameter-configuration` "Coming soon" placeholder page; lazy per-view init |

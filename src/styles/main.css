@@ -42,8 +42,23 @@ html, body {
 /* ── App Layout ── */
 #app {
   display: grid;
-  grid-template-rows: var(--header-height) 1fr var(--control-strip-height) var(--status-bar-height);
+  grid-template-rows: var(--header-height) 1fr;
   height: 100vh;
+}
+
+/* ── Views ── */
+.view {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.view[hidden] {
+  display: none;
+}
+
+#view-simulation:not([hidden]) {
+  display: grid;
+  grid-template-rows: 1fr var(--control-strip-height) var(--status-bar-height);
 }
 
 /* ── Header ── */
@@ -60,6 +75,57 @@ html, body {
   font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.5px;
+}
+
+/* ── Nav Tabs ── */
+.nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.nav-tab {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 14px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.nav-tab:hover {
+  color: var(--color-text);
+}
+
+.nav-tab--active {
+  color: var(--color-text);
+  border-bottom-color: var(--color-primary);
+}
+
+/* ── Coming Soon Placeholder ── */
+.coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  text-align: center;
+}
+
+.coming-soon h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.coming-soon p {
+  font-size: 14px;
+  color: var(--color-text-muted);
 }
 
 /* ── Dashboard ── */
