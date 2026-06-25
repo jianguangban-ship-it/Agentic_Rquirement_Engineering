@@ -47,7 +47,7 @@
 │  index.html + main.ts                             │
 │    ├── router.ts         (hash-based view router)  │
 │    ├── dashboard.ts      (orchestrator)            │
-│    ├── parameter-panel.ts (sidebar inputs+presets) │
+│    ├── parameter-panel.ts (config-page card grid)  │
 │    ├── control-bar.ts    (buttons, speed, load)   │
 │    ├── charts.ts         (6 uPlot charts)         │
 │    └── presets.ts        (motor preset data)       │
@@ -67,7 +67,7 @@
 
 ### Data Flow
 
-1. User configures parameters in the sidebar and control bar
+1. User configures parameters on the Parameter-Configuration page and sets run options in the control bar
 2. On Start, main thread sends `start` command with all parameters to the worker
 3. Worker runs the simulation loop: FOC controller -> SVPWM -> Motor Model -> RK4
 4. Worker sends decimated state batches back to main thread (~60 FPS)
@@ -86,14 +86,14 @@ full-pmsm-simulator/
 │   ├── plan.md                         # This document
 │   └── USER_MANUAL.md                  # User guide
 ├── src/
-│   ├── main.ts                         # Entry point (wires router)
+│   ├── main.ts                         # Entry point (wires router + dashboard)
 │   ├── types.ts                        # Shared type definitions
 │   ├── styles/
 │   │   └── main.css                    # Full stylesheet
 │   ├── ui/
 │   │   ├── router.ts                   # Hash-based view router
-│   │   ├── dashboard.ts               # UI orchestrator
-│   │   ├── parameter-panel.ts          # Sidebar: parameters + presets
+│   │   ├── dashboard.ts               # UI orchestrator (charts mount lazily)
+│   │   ├── parameter-panel.ts          # Config page: parameter cards + presets
 │   │   ├── control-bar.ts             # Bottom: buttons + inputs
 │   │   ├── charts.ts                  # 6 real-time charts
 │   │   └── presets.ts                 # Motor preset data
@@ -178,7 +178,7 @@ full-pmsm-simulator/
 | FR-06.3 | Default to `#/simulation`; unknown hash falls back to default | Done |
 | FR-06.4 | Active tab highlighted; bookmarking + back/forward supported | Done |
 | FR-06.5 | Lazy per-view init on first show (charts get a sized container) | Done |
-| FR-06.6 | Parameter-Configuration page ("Coming soon" placeholder) | Placeholder |
+| FR-06.6 | Parameter-Configuration page hosts all parameter sections (card grid) | Done |
 
 ---
 
@@ -192,14 +192,15 @@ swaps. The header (title + nav tabs) stays fixed.
 
 | Route | View | Status |
 |-------|------|--------|
-| `#/simulation` (default) | Simulation page (full simulator UI below) | Done |
-| `#/parameter-configuration` | Parameter-Configuration page ("Coming soon" placeholder) | Placeholder |
+| `#/simulation` (default) | Simulation page (charts + control/status bars) | Done |
+| `#/parameter-configuration` | Parameter-Configuration page (parameter card grid) | Done |
 
 Routing behavior: unknown/empty hash falls back to `#/simulation`; the active tab
-is highlighted; each view's init runs lazily on first show (the simulation
-dashboard initializes only when its view is first displayed, so uPlot charts get a
-sized container). Bookmarking, reload-on-route, and browser back/forward are
-supported.
+is highlighted; bookmarking, reload-on-route, and browser back/forward are
+supported. The parameter panel and control bar are wired eagerly at startup (so
+configuration is ready before Start regardless of the landing route); only the
+uPlot charts mount lazily on the simulation view's first show, so they get a
+sized (visible) container.
 
 ### Layout (Simulation page)
 
@@ -207,12 +208,12 @@ supported.
 +---------------------------------------------+
 |  Header: "PMSM Simulator"  [Simulation]     |
 |                  [Parameter-Configuration]  |
-+----------+----------------------------------+
-|          |  Chart Grid (2 x 3)              |
-| Sidebar  |  [Phase Currents] [d-q Currents] |
-| 280px    |  [Torque]         [Speed]        |
-|          |  [Voltages]       [d-q Trajectory]|
-+----------+----------------------------------+
++---------------------------------------------+
+|  Chart Grid (2 x 3, full width)             |
+|  [Phase Currents]      [d-q Currents]       |
+|  [Torque]              [Speed]              |
+|  [Voltages]            [d-q Trajectory]     |
++---------------------------------------------+
 |  Control Bar (Start/Pause/Reset + inputs)   |
 +---------------------------------------------+
 |  Status Bar (real-time metrics)             |
@@ -221,19 +222,25 @@ supported.
 
 ### Layout (Parameter-Configuration page)
 
+All parameter sections live here as a responsive grid of cards
+(`repeat(auto-fill, minmax(280px, 1fr))`) that reflows with the viewport width.
+
 ```
 +---------------------------------------------+
 |  Header: "PMSM Simulator"  [Simulation]     |
 |                  [Parameter-Configuration]  |
 +---------------------------------------------+
-|                                             |
-|           Parameter-Configuration           |
-|                Coming soon.                  |
-|                                             |
+|  Parameter Configuration                    |
+|  +-------------+ +-------------+ +---------+ |
+|  | Motor       | | Controller  | | Control | |
+|  | Parameters  | | Gains       | | Strategy| |
+|  |             | |             | +---------+ |
+|  |             | |             | | DC Bus  | |
+|  +-------------+ +-------------+ +---------+ |
 +---------------------------------------------+
 ```
 
-### Sidebar Sections (top to bottom)
+### Parameter Cards (Parameter-Configuration page)
 
 1. **Motor Parameters**
    - "Type" dropdown: "Import Motor Parameters" (default) + 4 preset options
@@ -265,6 +272,7 @@ supported.
 - Accent: #e94560 (red), Success: #4ecdc4 (green)
 - Monospace fonts for parameter labels and status bar
 - 6px border radius, 12px gap
+- Parameter sections render as bordered surface cards on the config page
 
 ---
 
@@ -515,4 +523,5 @@ Safety: when Ld = Lq (SPMSM), returns id_ref = 0.
 | 0.7 | - | `4fdc4e0` | Add inverter model with SVPWM, DC bus parameters (Vdc, Idc_max), back-EMF display, modulation index |
 | 0.8 | - | `b7ba6bd` | Merge CLAUDE.md branch into main |
 | 0.9 | - | `4001543` | UI consolidation: move preset selector from header to left panel as "Import Motor Parameters", remove duplicate Type dropdown, add motor type constraints (SPMSM: id=0 only + Ld=Lq sync, IPMSM: MTPA enabled), add type hint in Control Strategy section, clean up unused CSS |
-| 0.10 | - | (current) | Add multi-page navigation: header nav tabs with hash-based router (`src/ui/router.ts`), wrap existing UI in `#/simulation` view, add `#/parameter-configuration` "Coming soon" placeholder page; lazy per-view init |
+| 0.10 | - | `922bc21` | Add multi-page navigation: header nav tabs with hash-based router (`src/ui/router.ts`), wrap existing UI in `#/simulation` view, add `#/parameter-configuration` "Coming soon" placeholder page; lazy per-view init |
+| 0.11 | - | (current) | Migrate all parameter sections (Motor Parameters, Controller Gains, Control Strategy, DC Bus) from the simulation sidebar to the Parameter-Configuration page as a responsive card grid; simulation charts now span full width; parameter panel + control bar mount eagerly, charts mount lazily on first show |

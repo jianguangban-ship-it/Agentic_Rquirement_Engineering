@@ -52,7 +52,7 @@ function updateStatusBar(state: SimulationState): void {
     `<span>m = ${state.modulation_index.toFixed(3)}</span>`;
 }
 
-export function initDashboard(): void {
+export function initDashboard(): { mountCharts: () => void } {
   const { getMotorParams, getControllerParams, getInverterParams } = initParameterPanel((preset) => {
     sendCommand({ type: 'updateMotorParams', motorParams: preset.params });
     sendCommand({ type: 'updateControllerParams', controllerParams: preset.controllerParams });
@@ -77,9 +77,6 @@ export function initDashboard(): void {
     onLoadProfileChange: (lp: LoadProfile) => sendCommand({ type: 'updateLoadProfile', loadProfile: lp }),
   });
 
-  const charts = initCharts();
-  updateCharts = charts.pushBatch;
-
   updateControlState = (status) => {
     const bar = document.getElementById('status-bar');
     if (bar && status === 'stopped') {
@@ -87,4 +84,12 @@ export function initDashboard(): void {
     }
   };
 
+  // Charts mount lazily on the simulation view's first show, so uPlot reads a
+  // sized (visible) container. Everything above is wired eagerly.
+  return {
+    mountCharts: () => {
+      const charts = initCharts();
+      updateCharts = charts.pushBatch;
+    },
+  };
 }

@@ -68,26 +68,29 @@ You do **not** need to run `npm install` again.
 
 ## 3. User Interface Overview
 
-The simulator interface is divided into five main areas:
+The app has two pages, switched via the header nav tabs: **Simulation** and
+**Parameter-Configuration**. The Simulation page is divided into four areas:
 
 ```
 +---------------------------------------------+
-|  Header: "PMSM Simulator"                  |
-+----------+----------------------------------+
-|          |  Chart Grid (2 x 3)              |
-| Parameter|  [Phase Currents] [d-q Currents] |
-| Panel    |  [Torque]         [Speed]        |
-| (sidebar)|  [Voltages]       [d-q Trajectory]|
-+----------+----------------------------------+
+|  Header: "PMSM Simulator"  [Simulation]     |
+|                  [Parameter-Configuration]  |
++---------------------------------------------+
+|  Chart Grid (2 x 3, full width)             |
+|  [Phase Currents]      [d-q Currents]       |
+|  [Torque]              [Speed]              |
+|  [Voltages]            [d-q Trajectory]     |
++---------------------------------------------+
 |  Control Bar (buttons + inputs)             |
 +---------------------------------------------+
 |  Status Bar (real-time data readout)        |
 +---------------------------------------------+
 ```
 
-### Parameter Panel (Left Sidebar)
+### Parameter Configuration Page
 
-The sidebar is organized into four sections:
+Open the **Parameter-Configuration** tab to edit all parameters. They are laid
+out as a responsive grid of cards, organized into four sections:
 
 #### Motor Parameters
 
@@ -175,9 +178,9 @@ Real-time display of key simulation variables:
 
 ### Basic Workflow
 
-1. **Import a motor preset** from the "Type" dropdown at the top of the left sidebar (labeled "Import Motor Parameters"), or manually fill in all parameters
+1. **Open the Parameter-Configuration page** and **import a motor preset** from the "Type" dropdown on the Motor Parameters card (labeled "Import Motor Parameters"), or manually fill in all parameters
 2. **Check the control strategy** — the preset auto-selects the appropriate strategy (id = 0 for SPMSM, MTPA for IPMSM). For IPMSM motors, you can switch between strategies freely.
-3. **Set the speed reference** in the control bar (e.g., 100 rad/s)
+3. **Switch to the Simulation page** and **set the speed reference** in the control bar (e.g., 100 rad/s)
 4. **Configure the load torque** — choose the type, value, and apply time
 5. **Click Start** to begin the simulation
 6. **Observe** the 6 real-time charts updating
@@ -194,7 +197,7 @@ Real-time display of key simulation variables:
 
 ### Comparing SPMSM vs IPMSM
 
-1. Import "Small SPMSM (100W)" from the Type dropdown in the sidebar and run a test
+1. Import "Small SPMSM (100W)" from the Type dropdown on the Parameter-Configuration page and run a test
 2. Note that the control strategy is forced to "id = 0" and Ld/Lq are synced
 3. Reset, then import "Industrial IPMSM (5kW)"
 4. Note that the strategy switches to "MTPA" and Ld/Lq are independent

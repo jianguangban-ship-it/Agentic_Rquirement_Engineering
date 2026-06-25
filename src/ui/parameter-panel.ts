@@ -67,6 +67,17 @@ function createParamRow(field: ParamField): HTMLDivElement {
   return row;
 }
 
+/** Creates a titled section card and appends it to the given parent. */
+function createCard(parent: HTMLElement, title: string): HTMLElement {
+  const card = document.createElement('section');
+  card.className = 'param-card';
+  const heading = document.createElement('h2');
+  heading.textContent = title;
+  card.appendChild(heading);
+  parent.appendChild(card);
+  return card;
+}
+
 function getInputValue(key: string): number {
   const input = document.getElementById(`param-${key}`) as HTMLInputElement;
   return input ? parseFloat(input.value) || 0 : 0;
@@ -94,9 +105,7 @@ export function initParameterPanel(onPresetSelect: (preset: MotorPreset) => void
   let currentMotorType: MotorType = 'SPMSM';
 
   // ── Motor Parameters section ──
-  const motorTitle = document.createElement('h2');
-  motorTitle.textContent = 'Motor Parameters';
-  panel.appendChild(motorTitle);
+  const motorCard = createCard(panel, 'Motor Parameters');
 
   // Preset selector (replaces old Type dropdown)
   const presetRow = document.createElement('div');
@@ -118,14 +127,14 @@ export function initParameterPanel(onPresetSelect: (preset: MotorPreset) => void
   presetRow.appendChild(presetLabel);
   presetRow.appendChild(presetSelect);
   presetRow.appendChild(document.createElement('span')); // empty unit
-  panel.appendChild(presetRow);
+  motorCard.appendChild(presetRow);
 
   const motorGroup = document.createElement('div');
   motorGroup.className = 'param-group';
   MOTOR_FIELDS.forEach((field) => {
     motorGroup.appendChild(createParamRow(field));
   });
-  panel.appendChild(motorGroup);
+  motorCard.appendChild(motorGroup);
 
   // ── Ld/Lq sync for SPMSM ──
   const ldInput = document.getElementById('param-Ld') as HTMLInputElement;
@@ -143,9 +152,7 @@ export function initParameterPanel(onPresetSelect: (preset: MotorPreset) => void
   });
 
   // ── Controller Gains section ──
-  const ctrlTitle = document.createElement('h2');
-  ctrlTitle.textContent = 'Controller Gains';
-  panel.appendChild(ctrlTitle);
+  const ctrlCard = createCard(panel, 'Controller Gains');
 
   CONTROLLER_FIELDS.forEach(({ fields }) => {
     const group = document.createElement('div');
@@ -153,13 +160,11 @@ export function initParameterPanel(onPresetSelect: (preset: MotorPreset) => void
     fields.forEach((field) => {
       group.appendChild(createParamRow(field));
     });
-    panel.appendChild(group);
+    ctrlCard.appendChild(group);
   });
 
   // ── Control Strategy section ──
-  const stratTitle = document.createElement('h2');
-  stratTitle.textContent = 'Control Strategy';
-  panel.appendChild(stratTitle);
+  const stratCard = createCard(panel, 'Control Strategy');
 
   const stratRow = document.createElement('div');
   stratRow.className = 'param-row';
@@ -178,25 +183,23 @@ export function initParameterPanel(onPresetSelect: (preset: MotorPreset) => void
   stratRow.appendChild(stratLabel);
   stratRow.appendChild(stratSelect);
   stratRow.appendChild(document.createElement('span'));
-  panel.appendChild(stratRow);
+  stratCard.appendChild(stratRow);
 
   // Motor type hint label (shown below strategy selector)
   const typeHint = document.createElement('div');
   typeHint.className = 'type-hint';
   typeHint.textContent = 'Import a preset to set motor type constraints';
-  panel.appendChild(typeHint);
+  stratCard.appendChild(typeHint);
 
   // ── DC Bus section ──
-  const dcTitle = document.createElement('h2');
-  dcTitle.textContent = 'DC Bus';
-  panel.appendChild(dcTitle);
+  const dcCard = createCard(panel, 'DC Bus');
 
   const dcGroup = document.createElement('div');
   dcGroup.className = 'param-group';
   INVERTER_FIELDS.forEach((field) => {
     dcGroup.appendChild(createParamRow(field));
   });
-  panel.appendChild(dcGroup);
+  dcCard.appendChild(dcGroup);
 
   // ── Motor type constraint logic ──
   function applyMotorTypeConstraints(motorType: MotorType): void {
